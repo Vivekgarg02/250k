@@ -4,84 +4,112 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pharmisense Instant & Substitute Search</title>
-    <!-- Tailwind CSS for sleek, professional UI -->
+    <!-- Tailwind CSS UI Framework -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SQL.js for lightning-fast client-side SQLite execution -->
+    <!-- SQLite WebAssembly Engine -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
     <style>
-        .loader { border-top-color: #2563eb; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
-        @-webkit-keyframes spinner { 0% { -webkit-transform: rotate(0deg); } 100% { -webkit-transform: rotate(360deg); } }
-        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { font-family: system-ui, -apple-system, sans-serif; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+<body class="bg-slate-100 min-h-screen p-3 md:p-6">
 
-    <!-- Header -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div>
-                <h1 class="text-xl font-bold text-blue-600 tracking-tight">Pharmisense</h1>
-                <p class="text-xs text-slate-500 font-medium">Instant Medicine & Substitute Clinical Index</p>
-            </div>
-            <!-- Loading Indicator for DB -->
-            <div id="db-status" class="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200">
-                <div class="loader ease-linear rounded-full border-2 border-t-2 border-slate-200 h-4 w-4"></div>
-                <span id="status-text">Loading Database Engine...</span>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
-        <!-- Search Section -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8 mb-8">
-            <div class="max-w-3xl mx-auto">
-                <label for="search-input" class="block text-sm font-semibold text-slate-700 mb-2">Clinical Product Search</label>
-                <div class="relative">
-                    <input type="text" id="search-input" disabled
-                        placeholder="Enter brand name or API (e.g., Carca, Amoxycillin)..."
-                        class="w-full px-5 py-4 pl-12 text-lg rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-inner bg-slate-100 cursor-not-allowed">
-                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    </div>
-                </div>
-                <p class="text-xs text-slate-400 mt-2 text-center">Results populate instantly within seconds as you type.</p>
-            </div>
-        </div>
-
-        <!-- Results Section -->
-        <div id="results-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Dynamic Cards Injected Here -->
-        </div>
-
-        <!-- Substitute Modal / Drawer -->
-        <div id="substitute-modal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-                <div class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                    <div>
-                        <h3 id="modal-title" class="text-lg font-bold text-slate-800">Exact Clinical Substitutes</h3>
-                        <p id="modal-subtitle" class="text-xs text-slate-500">Matching exact active ingredients and strength groups</p>
-                    </div>
-                    <button onclick="closeSubstitutes()" class="text-slate-400 hover:text-slate-600 p-2 rounded-lg hover:bg-slate-200 transition">
-                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
-                </div>
-                <div id="modal-body" class="p-6 overflow-y-auto space-y-4 flex-grow bg-slate-50/50">
-                    <!-- Substitute list injected here -->
+    <div class="max-w-7xl mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+        
+        <!-- Header & Search Box -->
+        <div class="p-6 bg-slate-900 text-white">
+            <div class="flex justify-between items-center mb-3">
+                <h1 class="text-xl font-bold text-teal-400">Pharmisense Instant & Substitute Search</h1>
+                <div id="status" class="text-xs px-3 py-1 bg-slate-800 rounded-full text-slate-300">
+                    Loading Database Engine...
                 </div>
             </div>
+            
+            <div class="relative">
+                <input type="text" id="searchInput" oninput="handleSearch()" onkeyup="handleSearch()" disabled
+                    placeholder="Enter brand name or API (e.g., Carca, Amoxycillin)..." 
+                    class="w-full px-5 py-4 rounded-xl text-slate-900 text-base font-medium shadow-inner focus:outline-none focus:ring-4 focus:ring-teal-400 disabled:bg-slate-200">
+            </div>
         </div>
-    </main>
 
-    <!-- Footer -->
-    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
-        Pharmisense Clinical Engine &bull; Optimized for Medical Professionals & Patients
-    </footer>
+        <!-- Sub-header status -->
+        <div class="px-6 py-2.5 bg-slate-50 border-b border-slate-200 flex justify-between items-center text-xs text-slate-500 font-semibold">
+            <span id="resultsCount">Waiting for search input...</span>
+            <span class="hidden sm:inline">Click any medicine row to pop up exact substitutes</span>
+        </div>
 
-    <!-- Logic Script -->
+        <!-- Main Search Results Table -->
+        <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-100 sticky top-0 border-b border-slate-200 text-slate-600 text-xs uppercase font-bold tracking-wider">
+                    <tr>
+                        <th class="p-3.5">Brand Name</th>
+                        <th class="p-3.5">Manufacturer</th>
+                        <th class="p-3.5">Active Ingredient (API)</th>
+                        <th class="p-3.5">Exact Strength</th>
+                        <th class="p-3.5">Pack Size</th>
+                        <th class="p-3.5 text-center">Substitutes</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsTable" class="divide-y divide-slate-200 text-sm text-slate-800">
+                    <tr>
+                        <td colspan="6" class="p-10 text-center text-slate-400">
+                            Type a brand name or active ingredient above to start searching.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Substitute Popup Modal -->
+    <div id="substituteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+            
+            <!-- Modal Header -->
+            <div class="p-5 bg-teal-800 text-white flex justify-between items-start">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-teal-200">Selected Medicine</span>
+                    <h2 id="modalBrand" class="text-2xl font-bold">--</h2>
+                    <p id="modalComposition" class="text-teal-100 text-sm mt-0.5">--</p>
+                </div>
+                <button onclick="closeModal()" class="text-teal-200 hover:text-white text-3xl font-bold leading-none">&times;</button>
+            </div>
+
+            <!-- Modal Body (Substitutes List) -->
+            <div class="p-5 overflow-y-auto flex-1 bg-slate-50">
+                <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">
+                    Alternative Brands (Same Composition & Exact Strength)
+                </h3>
+                
+                <div class="overflow-x-auto bg-white rounded-xl border border-slate-200 shadow-sm">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-100 text-slate-600 text-xs uppercase font-bold">
+                            <tr>
+                                <th class="p-3">Substitute Brand</th>
+                                <th class="p-3">Manufacturer</th>
+                                <th class="p-3">Pack Size</th>
+                            </tr>
+                        </thead>
+                        <tbody id="substitutesList" class="divide-y divide-slate-100 text-sm text-slate-800">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 bg-slate-100 border-t border-slate-200 text-right">
+                <button onclick="closeModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-semibold">
+                    Close Window
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let db = null;
-        let searchTimeout = null;
+        const tableName = "250k release type";
 
         // Tier-1 Manufacturers Priority list (Ranked higher silently without visual badges)
         const tierOneManufacturers = [
@@ -92,132 +120,117 @@
             "Alembic Pharmaceuticals Ltd", "Ipca Laboratories Ltd", "Ajanta Pharma Ltd"
         ];
 
-        // Initialize SQL.js and load the database file
         async function initDatabase() {
+            const statusEl = document.getElementById('status');
             try {
-                const SQL = await initSqlJs({
+                const sqlPromise = initSqlJs({
                     locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
                 });
-                
-                // Matches your renamed database file
-                const dbUrl = '250k med.db'; 
-                
-                const response = await fetch(dbUrl);
-                if (!response.ok) throw new Error("Failed to fetch database binary file.");
-                const buffer = await response.arrayBuffer();
-                
-                db = new SQL.Database(new Uint8Array(buffer));
-                
-                // Enable UI
-                document.getElementById('db-status').className = "flex items-center gap-2 text-sm text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200";
-                document.getElementById('status-text').innerText = "Engine Ready (Sub-second Lookup Active)";
-                const input = document.getElementById('search-input');
-                input.disabled = false;
-                input.classList.remove('bg-slate-100', 'cursor-not-allowed');
-                input.focus();
+                // Updated to point directly to your renamed database file
+                const dataPromise = fetch('250k med.db').then(res => {
+                    if (!res.ok) throw new Error("Database file '250k med.db' not found.");
+                    return res.arrayBuffer();
+                });
 
-            } catch (error) {
-                console.error(error);
-                document.getElementById('db-status').className = "flex items-center gap-2 text-sm text-rose-600 bg-rose-50 px-3 py-1.5 rounded-full border border-rose-200";
-                document.getElementById('status-text').innerText = "Database Load Failed. Check File URL.";
+                const [SQL, buf] = await Promise.all([sqlPromise, dataPromise]);
+                db = new SQL.Database(new Uint8Array(buf));
+                
+                statusEl.className = "text-xs px-3 py-1 bg-emerald-900 text-emerald-300 font-bold rounded-full";
+                statusEl.innerText = "✓ Engine Ready (240k+ SKUs Loaded)";
+                
+                const inputEl = document.getElementById('searchInput');
+                inputEl.disabled = false;
+                
+                if (inputEl.value.trim().length >= 1) {
+                    handleSearch();
+                }
+            } catch (err) {
+                statusEl.className = "text-xs px-3 py-1 bg-rose-900 text-rose-300 font-bold rounded-full";
+                statusEl.innerText = "Error: " + err.message;
             }
         }
 
-        initDatabase();
+        function handleSearch() {
+            if (!db) return;
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            const resultsTable = document.getElementById('resultsTable');
+            const countEl = document.getElementById('resultsCount');
 
-        // Search Input Event Listener with debounce for zero lag
-        const searchInput = document.getElementById('search-input');
-        searchInput.addEventListener('input', (e) => {
-            clearTimeout(searchTimeout);
-            const query = e.target.value.trim();
-            
-            if (query.length === 0) {
-                document.getElementById('results-container').innerHTML = '';
+            if (!query || query.length === 0) {
+                resultsTable.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-slate-400">Enter brand name or API to search...</td></tr>`;
+                countEl.innerText = "Waiting for search input...";
                 return;
             }
 
-            searchTimeout = setTimeout(() => executeSearch(query), 150);
-        });
-
-        function executeSearch(query) {
-            if (!db) return;
-
             try {
-                // SQL query using your exact table and column names
                 const stmt = db.prepare(`
-                    SELECT * FROM "250k release type" 
+                    SELECT * FROM "${tableName}" 
                     WHERE "Brand Name" LIKE :q OR "API (Active Ingredients Only)" LIKE :q 
                     LIMIT 100
                 `);
                 
                 stmt.bind({ ':q': `%${query}%` });
-                let results = [];
+                let rows = [];
                 while (stmt.step()) {
-                    results.push(stmt.getAsObject());
+                    rows.push(stmt.getAsObject());
                 }
                 stmt.free();
 
-                // Sort results: Tier-1 manufacturers first silently
-                results.sort((a, b) => {
-                    let aTier = tierOneManufacturers.includes(a.Manufacturer) ? 0 : 1;
-                    let bTier = tierOneManufacturers.includes(b.Manufacturer) ? 0 : 1;
+                if (rows.length === 0) {
+                    resultsTable.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-slate-400">No matching medicines found. Try searching by active ingredient.</td></tr>`;
+                    countEl.innerText = "0 results found";
+                    return;
+                }
+
+                // Sort results placing Tier-1 manufacturers first silently
+                rows.sort((a, b) => {
+                    let aTier = tierOneManufacturers.includes(a['Manufacturer']) ? 0 : 1;
+                    let bTier = tierOneManufacturers.includes(b['Manufacturer']) ? 0 : 1;
                     return aTier - bTier;
                 });
 
-                renderResults(results);
-            } catch (err) {
-                console.error("Search error:", err);
+                countEl.innerText = `Displaying top ${rows.length} matches`;
+
+                resultsTable.innerHTML = rows.map(r => {
+                    const brand = r['Brand Name'] || '-';
+                    const mfr = r['Manufacturer'] || '-';
+                    const api = r['API (Active Ingredients Only)'] || '-';
+                    const strength = r['Exact Strength Group'] || '-';
+                    const pack = r['Pack Size'] || '-';
+
+                    return `
+                        <tr onclick="openSubstituteModal('${escapeAttr(api)}', '${escapeAttr(strength)}', '${escapeAttr(brand)}')" 
+                            class="hover:bg-teal-50/60 cursor-pointer transition border-b border-slate-100">
+                            <td class="p-3.5 font-bold text-teal-900">${escapeHtml(brand)}</td>
+                            <td class="p-3.5 text-slate-600">${escapeHtml(mfr)}</td>
+                            <td class="p-3.5 text-slate-800 font-medium">${escapeHtml(api)}</td>
+                            <td class="p-3.5 text-slate-700">${escapeHtml(strength)}</td>
+                            <td class="p-3.5 text-slate-500">${escapeHtml(pack)}</td>
+                            <td class="p-3.5 text-center">
+                                <button class="px-2.5 py-1 bg-teal-100 text-teal-800 hover:bg-teal-200 rounded-lg text-xs font-bold">
+                                    Substitutes
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error(e);
+                resultsTable.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-rose-500">Query error: ${e.message}</td></tr>`;
             }
         }
 
-        function renderResults(products) {
-            const container = document.getElementById('results-container');
-            container.innerHTML = '';
+        function openSubstituteModal(api, strength, brandName) {
+            document.getElementById('modalBrand').innerText = brandName;
+            document.getElementById('modalComposition').innerText = `API: ${api} | Strength: ${strength}`;
 
-            if (products.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400 bg-white rounded-2xl border border-slate-200">No matching medicines found for your query.</div>`;
-                return;
-            }
-
-            products.forEach(p => {
-                const card = document.createElement('div');
-                card.className = "bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between";
-                card.innerHTML = `
-                    <div>
-                        <div class="flex justify-between items-start gap-4 mb-3">
-                            <h3 class="text-lg font-bold text-slate-900">${escapeHtml(p['Brand Name'])}</h3>
-                            <span class="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg border border-blue-100">${escapeHtml(p['Category'])}</span>
-                        </div>
-                        <p class="text-sm text-slate-600 mb-2"><strong>API:</strong> ${escapeHtml(p['API (Active Ingredients Only)'])}</p>
-                        <p class="text-xs text-slate-500 mb-1"><strong>Strength:</strong> ${escapeHtml(p['Exact Strength Group'])}</p>
-                        <p class="text-xs text-slate-500 mb-1"><strong>Manufacturer:</strong> ${escapeHtml(p['Manufacturer'])}</p>
-                        <p class="text-xs text-slate-500 mb-4"><strong>Pack Size:</strong> ${escapeHtml(p['Pack Size'])}</p>
-                    </div>
-                    <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
-                        <span class="text-xs text-slate-400 font-medium">${escapeHtml(p['Prescription Status'] || '')}</span>
-                        <button onclick="findSubstitutes('${escapeAttr(p['API (Active Ingredients Only)'])}', '${escapeAttr(p['Exact Strength Group'])}', '${escapeAttr(p['Brand Name'])}')"
-                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition shadow-sm">
-                            Find Substitutes
-                        </button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function findSubstitutes(api, strength, brandName) {
-            if (!db) return;
-
-            document.getElementById('modal-title').innerText = `Substitutes for: ${brandName}`;
-            document.getElementById('modal-subtitle').innerText = `${api} | ${strength}`;
-            
-            const modalBody = document.getElementById('modal-body');
-            modalBody.innerHTML = `<div class="text-center py-8 text-slate-400">Loading exact matches...</div>`;
-            document.getElementById('substitute-modal').classList.remove('hidden');
+            const listEl = document.getElementById('substitutesList');
+            listEl.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-400">Loading exact substitutes...</td></tr>`;
+            document.getElementById('substituteModal').classList.remove('hidden');
 
             try {
                 const stmt = db.prepare(`
-                    SELECT * FROM "250k release type" 
+                    SELECT * FROM "${tableName}" 
                     WHERE "API (Active Ingredients Only)" = :api 
                     AND "Exact Strength Group" = :strength
                 `);
@@ -231,41 +244,30 @@
 
                 // Sort substitutes placing Tier-1 manufacturers on top silently
                 subs.sort((a, b) => {
-                    let aTier = tierOneManufacturers.includes(a.Manufacturer) ? 0 : 1;
-                    let bTier = tierOneManufacturers.includes(b.Manufacturer) ? 0 : 1;
+                    let aTier = tierOneManufacturers.includes(a['Manufacturer']) ? 0 : 1;
+                    let bTier = tierOneManufacturers.includes(b['Manufacturer']) ? 0 : 1;
                     return aTier - bTier;
                 });
 
-                modalBody.innerHTML = '';
                 if (subs.length === 0) {
-                    modalBody.innerHTML = `<div class="text-center py-8 text-slate-400">No direct exact-strength substitutes found.</div>`;
-                    return;
+                    listEl.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-400">No alternative brands found for this exact formulation.</td></tr>`;
+                } else {
+                    listEl.innerHTML = subs.map(s => `
+                        <tr class="hover:bg-slate-50 border-b border-slate-100">
+                            <td class="p-3 font-bold text-slate-800">${escapeHtml(s['Brand Name'])}</td>
+                            <td class="p-3 text-slate-600">${escapeHtml(s['Manufacturer'])}</td>
+                            <td class="p-3 text-slate-500">${escapeHtml(s['Pack Size'])}</td>
+                        </tr>
+                    `).join('');
                 }
-
-                subs.forEach(s => {
-                    const row = document.createElement('div');
-                    row.className = "bg-white p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm";
-                    row.innerHTML = `
-                        <div>
-                            <h4 class="font-bold text-slate-800 text-base">${escapeHtml(s['Brand Name'])}</h4>
-                            <p class="text-xs text-slate-500">Manufacturer: <span class="font-medium text-slate-700">${escapeHtml(s['Manufacturer'])}</span></p>
-                            <p class="text-xs text-slate-400">Pack: ${escapeHtml(s['Pack Size'])}</p>
-                        </div>
-                        <div class="text-left sm:text-right">
-                            <span class="inline-block text-xs font-semibold px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100">${escapeHtml(s['Category'])}</span>
-                        </div>
-                    `;
-                    modalBody.appendChild(row);
-                });
-
-            } catch (err) {
-                console.error("Substitute query error:", err);
-                modalBody.innerHTML = `<div class="text-center py-8 text-rose-500">Error loading substitutes.</div>`;
+            } catch (e) {
+                console.error(e);
+                listEl.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-rose-500">Error loading substitutes.</td></tr>`;
             }
         }
 
-        function closeSubstitutes() {
-            document.getElementById('substitute-modal').classList.add('hidden');
+        function closeModal() {
+            document.getElementById('substituteModal').classList.add('hidden');
         }
 
         function escapeHtml(str) {
@@ -275,6 +277,8 @@
         function escapeAttr(str) {
             return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
         }
+
+        window.onload = initDatabase;
     </script>
 </body>
 </html>
