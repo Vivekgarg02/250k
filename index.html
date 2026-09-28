@@ -3,72 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pharmisense Search</title>
+    <title>Pharmisense Clinical & Substitute Search</title>
     <!-- Tailwind CSS UI Framework -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SQLite WebAssembly Engine -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f1f5f9; }
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #0f172a; }
+        /* Custom smooth scrollbars */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="min-h-screen py-4 px-2 flex justify-center items-center">
 
     <!-- Phone-shaped container optimized for mobile app layout -->
-    <div class="w-full max-w-md sm:max-w-2xl bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden flex flex-col h-[85vh] sm:h-[80vh]">
+    <div class="w-full max-w-md sm:max-w-2xl bg-slate-50 rounded-3xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col h-[88vh] sm:h-[82vh]">
         
         <!-- Header & Search Box -->
-        <div class="p-4 bg-slate-900 text-white flex-shrink-0">
-            <div class="flex justify-between items-center mb-2">
-                <h1 class="text-base sm:text-lg font-bold text-teal-400">Pharmisense Search</h1>
-                <div id="status" class="text-[10px] px-2.5 py-0.5 bg-slate-800 rounded-full text-slate-300">
-                    Loading...
+        <div class="p-5 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white flex-shrink-0 shadow-md">
+            <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></div>
+                    <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">Pharmisense <span class="text-indigo-400 font-light">Rx</span></h1>
+                </div>
+                <div id="status" class="text-[10px] px-2.5 py-1 bg-slate-800/80 backdrop-blur border border-slate-700 rounded-full text-slate-300 font-medium">
+                    Initializing...
                 </div>
             </div>
             
             <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </span>
                 <input type="text" id="searchInput" oninput="debounceSearch()" disabled
-                    placeholder="Enter brand name or API..." 
-                    class="w-full px-4 py-3 rounded-xl text-slate-900 text-sm font-medium shadow-inner focus:outline-none focus:ring-2 focus:ring-teal-400 disabled:bg-slate-200">
+                    placeholder="Search brand name or active ingredient..." 
+                    class="w-full pl-10 pr-4 py-3 rounded-xl bg-white/95 text-slate-900 text-sm font-medium shadow-inner placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-200 transition">
             </div>
         </div>
 
-        <!-- Sub-header status -->
-        <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 flex justify-between items-center text-[11px] text-slate-500 font-semibold flex-shrink-0">
-            <span id="resultsCount">Waiting for input...</span>
-            <span class="hidden sm:inline">Tap card for substitutes</span>
+        <!-- Sub-header status bar -->
+        <div class="px-5 py-2.5 bg-white border-b border-slate-200 flex justify-between items-center text-[11px] text-slate-500 font-semibold flex-shrink-0 shadow-sm">
+            <span id="resultsCount">Ready for search query...</span>
+            <span class="hidden sm:inline text-indigo-600">Tap card to view substitutes</span>
         </div>
 
         <!-- Main Search Results Container -->
-        <div id="resultsContainer" class="p-3 space-y-2.5 overflow-y-auto flex-1 bg-slate-50/50">
-            <div class="p-8 text-center text-slate-400 text-xs bg-white rounded-xl border border-slate-200">
-                Type brand name or API to search.
+        <div id="resultsContainer" class="p-3.5 space-y-2.5 overflow-y-auto flex-1 bg-slate-100/70">
+            <div class="p-10 text-center text-slate-400 text-xs bg-white rounded-2xl border border-slate-200 shadow-sm mt-4">
+                <svg class="w-10 h-10 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                Enter a medicine brand or API to explore inventory and exact clinical substitutes.
             </div>
         </div>
     </div>
 
     <!-- Substitute Popup Modal -->
-    <div id="substituteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col">
+    <div id="substituteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-3">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-[85vh] overflow-hidden flex flex-col border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
             
             <!-- Modal Header -->
-            <div class="p-4 bg-teal-800 text-white flex justify-between items-start flex-shrink-0">
+            <div class="p-4.5 bg-gradient-to-r from-indigo-900 to-slate-900 text-white flex justify-between items-start flex-shrink-0">
                 <div>
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-teal-200">Selected Medicine</span>
-                    <h2 id="modalBrand" class="text-lg font-bold leading-tight mt-0.5">--</h2>
-                    <p id="modalComposition" class="text-teal-100 text-xs mt-1">--</p>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-300">Exact Composition Match</span>
+                    <h2 id="modalBrand" class="text-base sm:text-lg font-bold leading-tight mt-0.5 text-white">--</h2>
+                    <p id="modalComposition" class="text-indigo-100 text-xs mt-1 font-medium">--</p>
                 </div>
-                <button onclick="closeModal()" class="text-teal-200 hover:text-white text-2xl font-bold leading-none p-1">&times;</button>
+                <button onclick="closeModal()" class="text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold transition">&times;</button>
             </div>
 
             <!-- Modal Body (Substitutes List) -->
-            <div class="p-3 overflow-y-auto flex-1 bg-slate-50 space-y-2" id="substitutesList">
+            <div class="p-3.5 overflow-y-auto flex-1 bg-slate-50 space-y-2" id="substitutesList">
                 <!-- Dynamic Content -->
             </div>
 
             <!-- Modal Footer -->
-            <div class="p-3 bg-slate-100 border-t border-slate-200 text-right flex-shrink-0">
-                <button onclick="closeModal()" class="w-full px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold">
+            <div class="p-3 bg-white border-t border-slate-200 text-right flex-shrink-0">
+                <button onclick="closeModal()" class="w-full px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow transition">
                     Close Window
                 </button>
             </div>
@@ -109,8 +121,8 @@
                 const [SQL, buf] = await Promise.all([sqlPromise, dataPromise]);
                 db = new SQL.Database(new Uint8Array(buf));
                 
-                statusEl.className = "text-[10px] px-2 py-0.5 bg-emerald-900 text-emerald-300 font-bold rounded-full";
-                statusEl.innerText = "✓ Ready";
+                statusEl.className = "text-[10px] px-2.5 py-1 bg-emerald-950 border border-emerald-800 text-emerald-300 font-bold rounded-full";
+                statusEl.innerText = "● System Online";
                 
                 const inputEl = document.getElementById('searchInput');
                 inputEl.disabled = false;
@@ -119,17 +131,17 @@
                     handleSearch();
                 }
             } catch (err) {
-                statusEl.className = "text-[10px] px-2 py-0.5 bg-rose-900 text-rose-300 font-bold rounded-full";
-                statusEl.innerText = "Error";
+                statusEl.className = "text-[10px] px-2.5 py-1 bg-rose-950 border border-rose-800 text-rose-300 font-bold rounded-full";
+                statusEl.innerText = "Error Loading DB";
             }
         }
 
-        // Debounce search function to eliminate lag when typing quickly or multiple times
+        // Debounce search function to eliminate lag
         function debounceSearch() {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
                 handleSearch();
-            }, 250); // Waits 250ms after the last key press before querying
+            }, 250);
         }
 
         function handleSearch() {
@@ -138,14 +150,16 @@
             const container = document.getElementById('resultsContainer');
             const countEl = document.getElementById('resultsCount');
 
+            // Reset scroll position to top instantly on new search
+            container.scrollTop = 0;
+
             if (!query || query.length === 0) {
-                container.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs bg-white rounded-xl border border-slate-200">Type brand name or API to search.</div>`;
-                countEl.innerText = "Waiting for input...";
+                container.innerHTML = `<div class="p-10 text-center text-slate-400 text-xs bg-white rounded-2xl border border-slate-200 shadow-sm mt-4">Enter a medicine brand or API to explore inventory and exact clinical substitutes.</div>`;
+                countEl.innerText = "Ready for search query...";
                 return;
             }
 
             try {
-                // Fuzzy/flexible query structure to support partial/slightly misspelled terms
                 const cleanQuery = query.replace(/[^a-z0-9]/gi, '%');
                 const stmt = db.prepare(`
                     SELECT * FROM "${tableName}" 
@@ -161,8 +175,8 @@
                 stmt.free();
 
                 if (rows.length === 0) {
-                    container.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs bg-white rounded-xl border border-slate-200">No matching medicines found. Check spelling or try a broader term.</div>`;
-                    countEl.innerText = "0 results found";
+                    container.innerHTML = `<div class="p-8 text-center text-slate-400 text-xs bg-white rounded-2xl border border-slate-200 shadow-sm">No matching formulas found. Check spelling or try a broader keyword.</div>`;
+                    countEl.innerText = "0 matches found";
                     return;
                 }
 
@@ -173,7 +187,7 @@
                     return aTop - bTop;
                 });
 
-                countEl.innerText = `${rows.length} matches found`;
+                countEl.innerText = `${rows.length} records retrieved`;
 
                 container.innerHTML = rows.map(r => {
                     const brand = r['Brand Name'] || '-';
@@ -184,15 +198,15 @@
 
                     return `
                         <div onclick="openSubstituteModal('${escapeAttr(api)}', '${escapeAttr(strength)}', '${escapeAttr(brand)}')" 
-                            class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm active:bg-teal-50 transition cursor-pointer flex flex-col gap-1.5">
+                            class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-indigo-300 active:scale-[0.99] transition cursor-pointer flex flex-col gap-1.5">
                             <div class="flex justify-between items-start gap-1">
-                                <h3 class="font-bold text-slate-900 text-sm leading-snug">${escapeHtml(brand)}</h3>
-                                <span class="text-[10px] bg-teal-100 text-teal-800 font-bold px-2 py-0.5 rounded whitespace-nowrap">Subs</span>
+                                <h3 class="font-bold text-slate-900 text-sm tracking-tight leading-snug">${escapeHtml(brand)}</h3>
+                                <span class="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-100 font-bold px-2 py-0.5 rounded-full whitespace-nowrap">Substitutes</span>
                             </div>
-                            <p class="text-[11px] text-teal-700 font-semibold">API: ${escapeHtml(api)} (${escapeHtml(strength)})</p>
-                            <div class="flex justify-between items-center text-[11px] text-slate-500 pt-1 border-t border-slate-100">
-                                <span class="truncate max-w-[65%]"><strong>Manufacturer:</strong> <span class="font-bold text-slate-700">${escapeHtml(mfr)}</span></span>
-                                <span class="bg-slate-100 px-1.5 py-0.5 rounded font-medium">Pack: ${escapeHtml(pack)}</span>
+                            <p class="text-[11px] text-teal-700 font-semibold">API: ${escapeHtml(api)} <span class="text-slate-500 font-normal">(${escapeHtml(strength)})</span></p>
+                            <div class="flex justify-between items-center text-[11px] text-slate-500 pt-1.5 border-t border-slate-100">
+                                <span class="truncate max-w-[68%]">Mfr: <span class="font-bold text-slate-800">${escapeHtml(mfr)}</span></span>
+                                <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-medium text-[10px]">Pack: ${escapeHtml(pack)}</span>
                             </div>
                         </div>
                     `;
@@ -200,7 +214,7 @@
 
             } catch (e) {
                 console.error(e);
-                container.innerHTML = `<div class="p-6 text-center text-rose-500 text-xs bg-white rounded-xl">Query error occurred.</div>`;
+                container.innerHTML = `<div class="p-6 text-center text-rose-500 text-xs bg-white rounded-2xl">Query execution error.</div>`;
             }
         }
 
@@ -209,7 +223,9 @@
             document.getElementById('modalComposition').innerText = `API: ${api} | Strength: ${strength}`;
 
             const listEl = document.getElementById('substitutesList');
-            listEl.innerHTML = `<div class="p-4 text-center text-slate-400 text-xs bg-white rounded-xl">Loading substitutes...</div>`;
+            // Reset modal scroll position to top
+            listEl.scrollTop = 0;
+            listEl.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs bg-white rounded-2xl">Searching exact substitutes...</div>`;
             document.getElementById('substituteModal').classList.remove('hidden');
 
             try {
@@ -234,22 +250,22 @@
                 });
 
                 if (subs.length === 0) {
-                    listEl.innerHTML = `<div class="p-4 text-center text-slate-400 text-xs bg-white rounded-xl">No alternative brands found.</div>`;
+                    listEl.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs bg-white rounded-2xl">No alternative brands found for this formulation.</div>`;
                 } else {
                     listEl.innerHTML = subs.map(s => {
                         const mfr = s['Manufacturer'] || '-';
                         return `
                             <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-0.5">
                                 <h4 class="font-bold text-slate-900 text-xs">${escapeHtml(s['Brand Name'])}</h4>
-                                <p class="text-[11px] text-slate-600"><strong>Manufacturer:</strong> <span class="font-bold text-slate-700">${escapeHtml(mfr)}</span></p>
-                                <p class="text-[10px] text-slate-400"><strong>Pack:</strong> ${escapeHtml(s['Pack Size'])}</p>
+                                <p class="text-[11px] text-slate-600">Manufacturer: <span class="font-bold text-slate-800">${escapeHtml(mfr)}</span></p>
+                                <p class="text-[10px] text-slate-400">Pack: ${escapeHtml(s['Pack Size'])}</p>
                             </div>
                         `;
                     }).join('');
                 }
             } catch (e) {
                 console.error(e);
-                listEl.innerHTML = `<div class="p-4 text-center text-rose-500 text-xs bg-white rounded-xl">Error loading substitutes.</div>`;
+                listEl.innerHTML = `<div class="p-6 text-center text-rose-500 text-xs bg-white rounded-2xl">Error loading substitutes.</div>`;
             }
         }
 
