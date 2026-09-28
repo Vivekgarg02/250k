@@ -9,72 +9,46 @@
     <!-- SQLite WebAssembly Engine -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; }
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f8fafc; }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen p-2 sm:p-4 md:p-6">
+<body class="min-h-screen p-2 sm:p-5 flex flex-col items-center">
 
-    <div class="max-w-7xl mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+    <div class="w-full max-w-4xl bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
         
         <!-- Header & Search Box -->
         <div class="p-4 sm:p-6 bg-slate-900 text-white">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-                <h1 class="text-lg sm:text-xl font-bold text-teal-400 leading-tight">Pharmisense Instant & Substitute Search</h1>
-                <div id="status" class="text-xs px-3 py-1 bg-slate-800 rounded-full text-slate-300 w-full sm:w-auto text-center">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
+                <h1 class="text-lg sm:text-xl font-bold text-teal-400">Pharmisense Instant & Substitute Search</h1>
+                <div id="status" class="text-[11px] px-3 py-1 bg-slate-800 rounded-full text-slate-300">
                     Loading Database Engine...
                 </div>
             </div>
             
             <div class="relative">
                 <input type="text" id="searchInput" oninput="handleSearch()" onkeyup="handleSearch()" disabled
-                    placeholder="Enter brand name or API (e.g., Carca, Amoxycillin)..." 
-                    class="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-xl text-slate-900 text-sm sm:text-base font-medium shadow-inner focus:outline-none focus:ring-4 focus:ring-teal-400 disabled:bg-slate-200">
+                    placeholder="Enter brand name or API..." 
+                    class="w-full px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl text-slate-900 text-sm sm:text-base font-medium shadow-inner focus:outline-none focus:ring-4 focus:ring-teal-400 disabled:bg-slate-200">
             </div>
         </div>
 
         <!-- Sub-header status -->
-        <div class="px-4 sm:px-6 py-2.5 bg-slate-50 border-b border-slate-200 flex justify-between items-center text-xs text-slate-500 font-semibold">
+        <div class="px-4 sm:px-6 py-2 bg-slate-50 border-b border-slate-200 flex justify-between items-center text-xs text-slate-500 font-semibold">
             <span id="resultsCount">Waiting for search input...</span>
-            <span class="hidden md:inline">Click any medicine row to pop up exact substitutes</span>
+            <span class="hidden sm:inline">Tap any card to view exact substitutes</span>
         </div>
 
-        <!-- Main Search Results Display (Table for desktop, Cards for mobile) -->
-        <div class="max-h-[65vh] overflow-y-auto">
-            <!-- Desktop Table View -->
-            <div class="hidden md:block overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-slate-100 sticky top-0 border-b border-slate-200 text-slate-600 text-xs uppercase font-bold tracking-wider z-10">
-                        <tr>
-                            <th class="p-3.5">Brand Name</th>
-                            <th class="p-3.5">Manufacturer</th>
-                            <th class="p-3.5">Active Ingredient (API)</th>
-                            <th class="p-3.5">Exact Strength</th>
-                            <th class="p-3.5">Pack Size</th>
-                            <th class="p-3.5 text-center">Substitutes</th>
-                        </tr>
-                    </thead>
-                    <tbody id="resultsTable" class="divide-y divide-slate-200 text-sm text-slate-800">
-                        <tr>
-                            <td colspan="6" class="p-10 text-center text-slate-400">
-                                Type a brand name or active ingredient above to start searching.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Mobile Card View -->
-            <div id="resultsCards" class="md:hidden p-3 space-y-3">
-                <div class="p-8 text-center text-slate-400 text-sm">
-                    Type a brand name or active ingredient above to start searching.
-                </div>
+        <!-- Main Search Results Card Container (Mobile Optimized) -->
+        <div id="resultsContainer" class="p-3 sm:p-5 space-y-3 max-h-[65vh] overflow-y-auto bg-slate-50/50">
+            <div class="p-10 text-center text-slate-400 text-sm bg-white rounded-xl border border-slate-200 shadow-sm">
+                Type a brand name or active ingredient above to start searching.
             </div>
         </div>
     </div>
 
     <!-- Substitute Popup Modal -->
     <div id="substituteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 sm:p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             
             <!-- Modal Header -->
             <div class="p-4 sm:p-5 bg-teal-800 text-white flex justify-between items-start">
@@ -92,8 +66,8 @@
                     Alternative Brands (Same Composition & Exact Strength)
                 </h3>
                 
-                <div id="substitutesList" class="space-y-2.5 sm:space-y-0 sm:bg-white sm:rounded-xl sm:border sm:border-slate-200 sm:shadow-sm sm:overflow-hidden">
-                    <!-- Dynamic Content injected as cards on mobile, rows on desktop via JS -->
+                <div id="substitutesList" class="space-y-2.5">
+                    <!-- Dynamic Content -->
                 </div>
             </div>
 
@@ -133,8 +107,8 @@
                 const [SQL, buf] = await Promise.all([sqlPromise, dataPromise]);
                 db = new SQL.Database(new Uint8Array(buf));
                 
-                statusEl.className = "text-xs px-3 py-1 bg-emerald-900 text-emerald-300 font-bold rounded-full text-center";
-                statusEl.innerText = "✓ Engine Ready (240k+ SKUs Loaded)";
+                statusEl.className = "text-[11px] px-3 py-1 bg-emerald-900 text-emerald-300 font-bold rounded-full";
+                statusEl.innerText = "✓ Engine Ready (240k+ SKUs)";
                 
                 const inputEl = document.getElementById('searchInput');
                 inputEl.disabled = false;
@@ -143,7 +117,7 @@
                     handleSearch();
                 }
             } catch (err) {
-                statusEl.className = "text-xs px-3 py-1 bg-rose-900 text-rose-300 font-bold rounded-full text-center";
+                statusEl.className = "text-[11px] px-3 py-1 bg-rose-900 text-rose-300 font-bold rounded-full";
                 statusEl.innerText = "Error: " + err.message;
             }
         }
@@ -151,15 +125,11 @@
         function handleSearch() {
             if (!db) return;
             const query = document.getElementById('searchInput').value.trim().toLowerCase();
-            const resultsTable = document.getElementById('resultsTable');
-            const resultsCards = document.getElementById('resultsCards');
+            const container = document.getElementById('resultsContainer');
             const countEl = document.getElementById('resultsCount');
 
             if (!query || query.length === 0) {
-                const emptyMsg = `<tr><td colspan="6" class="p-10 text-center text-slate-400">Enter brand name or API to search...</td></tr>`;
-                const emptyCardMsg = `<div class="p-8 text-center text-slate-400 text-sm bg-white rounded-xl border border-slate-200">Enter brand name or API to search...</div>`;
-                resultsTable.innerHTML = emptyMsg;
-                resultsCards.innerHTML = emptyCardMsg;
+                container.innerHTML = `<div class="p-10 text-center text-slate-400 text-sm bg-white rounded-xl border border-slate-200 shadow-sm">Type a brand name or active ingredient above to start searching.</div>`;
                 countEl.innerText = "Waiting for search input...";
                 return;
             }
@@ -179,10 +149,7 @@
                 stmt.free();
 
                 if (rows.length === 0) {
-                    const noMsg = `<tr><td colspan="6" class="p-10 text-center text-slate-400">No matching medicines found. Try searching by active ingredient.</td></tr>`;
-                    const noCardMsg = `<div class="p-8 text-center text-slate-400 text-sm bg-white rounded-xl border border-slate-200">No matching medicines found. Try searching by active ingredient.</div>`;
-                    resultsTable.innerHTML = noMsg;
-                    resultsCards.innerHTML = noCardMsg;
+                    container.innerHTML = `<div class="p-10 text-center text-slate-400 text-sm bg-white rounded-xl border border-slate-200 shadow-sm">No matching medicines found. Try searching by active ingredient.</div>`;
                     countEl.innerText = "0 results found";
                     return;
                 }
@@ -196,60 +163,35 @@
 
                 countEl.innerText = `Displaying top ${rows.length} matches`;
 
-                // Render Desktop Table Rows
-                resultsTable.innerHTML = rows.map(r => {
+                container.innerHTML = rows.map(r => {
                     const brand = r['Brand Name'] || '-';
                     const mfr = r['Manufacturer'] || '-';
                     const api = r['API (Active Ingredients Only)'] || '-';
                     const strength = r['Exact Strength Group'] || '-';
                     const pack = r['Pack Size'] || '-';
-
-                    return `
-                        <tr onclick="openSubstituteModal('${escapeAttr(api)}', '${escapeAttr(strength)}', '${escapeAttr(brand)}')" 
-                            class="hover:bg-teal-50/60 cursor-pointer transition border-b border-slate-100">
-                            <td class="p-3.5 font-bold text-teal-900">${escapeHtml(brand)}</td>
-                            <td class="p-3.5 text-slate-600">${escapeHtml(mfr)}</td>
-                            <td class="p-3.5 text-slate-800 font-medium">${escapeHtml(api)}</td>
-                            <td class="p-3.5 text-slate-700">${escapeHtml(strength)}</td>
-                            <td class="p-3.5 text-slate-500">${escapeHtml(pack)}</td>
-                            <td class="p-3.5 text-center">
-                                <button class="px-2.5 py-1 bg-teal-100 text-teal-800 hover:bg-teal-200 rounded-lg text-xs font-bold">
-                                    Substitutes
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-
-                // Render Mobile Touch Cards
-                resultsCards.innerHTML = rows.map(r => {
-                    const brand = r['Brand Name'] || '-';
-                    const mfr = r['Manufacturer'] || '-';
-                    const api = r['API (Active Ingredients Only)'] || '-';
-                    const strength = r['Exact Strength Group'] || '-';
-                    const pack = r['Pack Size'] || '-';
+                    const category = r['Category'] || '';
 
                     return `
                         <div onclick="openSubstituteModal('${escapeAttr(api)}', '${escapeAttr(strength)}', '${escapeAttr(brand)}')" 
-                            class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm active:bg-teal-50 transition cursor-pointer flex flex-col gap-2">
+                            class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md active:bg-teal-50/50 transition cursor-pointer flex flex-col gap-2">
                             <div class="flex justify-between items-start gap-2">
-                                <h3 class="font-bold text-teal-900 text-base leading-snug">${escapeHtml(brand)}</h3>
-                                <span class="px-2 py-0.5 bg-teal-100 text-teal-800 rounded-md text-[11px] font-bold whitespace-nowrap">Substitutes</span>
+                                <div>
+                                    <h3 class="font-bold text-slate-900 text-base sm:text-lg leading-snug">${escapeHtml(brand)}</h3>
+                                    <p class="text-xs text-teal-700 font-semibold mt-0.5">${escapeHtml(api)} <span class="text-slate-400 font-normal">(${escapeHtml(strength)})</span></p>
+                                </div>
+                                ${category ? `<span class="px-2 py-1 bg-slate-100 text-slate-700 rounded-md text-[11px] font-medium whitespace-nowrap">${escapeHtml(category)}</span>` : ''}
                             </div>
-                            <p class="text-xs text-slate-600"><strong>API:</strong> ${escapeHtml(api)}</p>
-                            <div class="flex flex-wrap justify-between items-center text-xs text-slate-500 pt-1 border-t border-slate-100 gap-1">
-                                <span><strong>Strength:</strong> ${escapeHtml(strength)}</span>
-                                <span><strong>Pack:</strong> ${escapeHtml(pack)}</span>
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs text-slate-500 pt-2 border-t border-slate-100 gap-1">
+                                <span><strong>Mfr:</strong> ${escapeHtml(mfr)}</span>
+                                <span class="bg-teal-50 text-teal-800 px-2 py-0.5 rounded font-bold text-[11px]">Pack: ${escapeHtml(pack)}</span>
                             </div>
-                            <p class="text-[11px] text-slate-400 truncate"><strong>Mfr:</strong> ${escapeHtml(mfr)}</p>
                         </div>
                     `;
                 }).join('');
 
             } catch (e) {
                 console.error(e);
-                resultsTable.innerHTML = `<tr><td colspan="6" class="p-10 text-center text-rose-500">Query error: ${e.message}</td></tr>`;
-                resultsCards.innerHTML = `<div class="p-8 text-center text-rose-500 text-sm bg-white rounded-xl border border-slate-200">Query error: ${e.message}</div>`;
+                container.innerHTML = `<div class="p-10 text-center text-rose-500 text-sm bg-white rounded-xl border border-slate-200">Query error: ${e.message}</div>`;
             }
         }
 
@@ -258,7 +200,7 @@
             document.getElementById('modalComposition').innerText = `API: ${api} | Strength: ${strength}`;
 
             const listEl = document.getElementById('substitutesList');
-            listEl.innerHTML = `<div class="p-6 text-center text-slate-400 text-sm">Loading exact substitutes...</div>`;
+            listEl.innerHTML = `<div class="p-6 text-center text-slate-400 text-sm bg-white rounded-xl">Loading exact substitutes...</div>`;
             document.getElementById('substituteModal').classList.remove('hidden');
 
             try {
@@ -283,26 +225,15 @@
                 });
 
                 if (subs.length === 0) {
-                    listEl.innerHTML = `<div class="p-6 text-center text-slate-400 text-sm bg-white rounded-xl">No alternative brands found for this exact formulation.</div>`;
+                    listEl.innerHTML = `<div class="p-6 text-center text-slate-400 text-sm bg-white rounded-xl border border-slate-200">No alternative brands found for this exact formulation.</div>`;
                 } else {
-                    // Mobile-friendly card list inside modal for small screens, table rows for desktop
-                    let mobileCardsHtml = `<div class="space-y-2 sm:hidden">` + subs.map(s => `
+                    listEl.innerHTML = subs.map(s => `
                         <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-1">
-                            <h4 class="font-bold text-slate-900 text-sm">${escapeHtml(s['Brand Name'])}</h4>
-                            <p class="text-xs text-slate-600"><strong>Mfr:</strong> ${escapeHtml(s['Manufacturer'])}</p>
-                            <p class="text-xs text-slate-400"><strong>Pack:</strong> ${escapeHtml(s['Pack Size'])}</p>
+                            <h4 class="font-bold text-slate-900 text-sm sm:text-base">${escapeHtml(s['Brand Name'])}</h4>
+                            <p class="text-xs text-slate-600"><strong>Manufacturer:</strong> ${escapeHtml(s['Manufacturer'])}</p>
+                            <p class="text-xs text-slate-500"><strong>Pack Size:</strong> ${escapeHtml(s['Pack Size'])}</p>
                         </div>
-                    `).join('') + `</div>`;
-
-                    let desktopTableHtml = `<div class="hidden sm:block overflow-x-auto"><table class="w-full text-left border-collapse"><thead class="bg-slate-100 text-slate-600 text-xs uppercase font-bold"><tr><th class="p-3">Substitute Brand</th><th class="p-3">Manufacturer</th><th class="p-3">Pack Size</th></tr></thead><tbody class="divide-y divide-slate-100 text-sm text-slate-800">` + subs.map(s => `
-                        <tr class="hover:bg-slate-50 border-b border-slate-100">
-                            <td class="p-3 font-bold text-slate-800">${escapeHtml(s['Brand Name'])}</td>
-                            <td class="p-3 text-slate-600">${escapeHtml(s['Manufacturer'])}</td>
-                            <td class="p-3 text-slate-500">${escapeHtml(s['Pack Size'])}</td>
-                        </tr>
-                    `).join('') + `</tbody></table></div>`;
-
-                    listEl.innerHTML = mobileCardsHtml + desktopTableHtml;
+                    `).join('');
                 }
             } catch (e) {
                 console.error(e);
