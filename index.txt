@@ -76,7 +76,7 @@
     <!-- Footer -->
     <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
         Pharmisense Clinical Engine &bull; Optimized for Medical Professionals & Patients
-    end</footer>
+    </footer>
 
     <!-- Logic Script -->
     <script>
@@ -92,14 +92,14 @@
             "Alembic Pharmaceuticals Ltd", "Ipca Laboratories Ltd", "Ajanta Pharma Ltd"
         ];
 
-        // Initialize SQL.js and load the database from GitHub raw URL or local path
+        // Initialize SQL.js and load the database file
         async function initDatabase() {
             try {
                 const SQL = await initSqlJs({
                     locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
                 });
                 
-                // UPDATE THIS URL to your raw GitHub file link or relative path where '250k med.db' is hosted
+                // Matches your renamed database file
                 const dbUrl = '250k med.db'; 
                 
                 const response = await fetch(dbUrl);
@@ -143,7 +143,7 @@
             if (!db) return;
 
             try {
-                // SQL query searching Brand Name or API with prioritization handling
+                // SQL query using your exact table and column names
                 const stmt = db.prepare(`
                     SELECT * FROM "250k release type" 
                     WHERE "Brand Name" LIKE :q OR "API (Active Ingredients Only)" LIKE :q 
@@ -157,7 +157,7 @@
                 }
                 stmt.free();
 
-                // Sort results: Tier 1 manufacturers first silently
+                // Sort results: Tier-1 manufacturers first silently
                 results.sort((a, b) => {
                     let aTier = tierOneManufacturers.includes(a.Manufacturer) ? 0 : 1;
                     let bTier = tierOneManufacturers.includes(b.Manufacturer) ? 0 : 1;
