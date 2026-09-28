@@ -38,7 +38,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </span>
                 <input type="text" id="searchInput" oninput="debounceSearch()" disabled
-                    placeholder="Search combinations (e.g., magnesium cetirizine)..." 
+                    placeholder="Search combinations..." 
                     class="w-full pl-10 pr-4 py-3 rounded-xl bg-white/95 text-slate-900 text-sm font-medium shadow-inner placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-200 transition">
             </div>
         </div>
@@ -157,7 +157,6 @@
             }
 
             try {
-                // Split query into individual words for combination search handling
                 const tokens = rawQuery.split(/\s+/).filter(t => t.length > 0);
                 
                 let conditions = [];
@@ -165,7 +164,6 @@
 
                 tokens.forEach((token, index) => {
                     let paramName = `:t${index}`;
-                    conditions.append ? null : null; // placeholder syntax safety
                     conditions.push(`(LOWER("Brand Name") LIKE ${paramName} OR LOWER("API (Active Ingredients Only)") LIKE ${paramName})`);
                     params[paramName] = `%${token}%`;
                 });
@@ -191,7 +189,6 @@
                     return;
                 }
 
-                // Sort results: Top pharma companies first silently
                 rows.sort((a, b) => {
                     let aTop = isTopCompany(a['Manufacturer']) ? 0 : 1;
                     let bTop = isTopCompany(b['Manufacturer']) ? 0 : 1;
