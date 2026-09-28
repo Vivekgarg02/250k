@@ -10,7 +10,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; background-color: #0f172a; }
-        /* Custom smooth scrollbars */
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
@@ -39,7 +38,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </span>
                 <input type="text" id="searchInput" oninput="debounceSearch()" disabled
-                    placeholder="Search brand name or active ingredient..." 
+                    placeholder="Search combinations (e.g., magnesium cetirizine)..." 
                     class="w-full pl-10 pr-4 py-3 rounded-xl bg-white/95 text-slate-900 text-sm font-medium shadow-inner placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-slate-200 transition">
             </div>
         </div>
@@ -54,7 +53,7 @@
         <div id="resultsContainer" class="p-3.5 space-y-2.5 overflow-y-auto flex-1 bg-slate-100/70">
             <div class="p-10 text-center text-slate-400 text-xs bg-white rounded-2xl border border-slate-200 shadow-sm mt-4">
                 <svg class="w-10 h-10 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                Enter a medicine brand or API to explore inventory and exact clinical substitutes.
+                Type multiple components or a brand name to explore exact clinical substitutes.
             </div>
         </div>
     </div>
@@ -136,7 +135,6 @@
             }
         }
 
-        // Debounce search function to eliminate lag
         function debounceSearch() {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
@@ -146,28 +144,41 @@
 
         function handleSearch() {
             if (!db) return;
-            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            const rawQuery = document.getElementById('searchInput').value.trim().toLowerCase();
             const container = document.getElementById('resultsContainer');
             const countEl = document.getElementById('resultsCount');
 
-            // Reset scroll position to top instantly on new search
             container.scrollTop = 0;
 
-            if (!query || query.length === 0) {
-                container.innerHTML = `<div class="p-10 text-center text-slate-400 text-xs bg-white rounded-2xl border border-slate-200 shadow-sm mt-4">Enter a medicine brand or API to explore inventory and exact clinical substitutes.</div>`;
+            if (!rawQuery || rawQuery.length === 0) {
+                container.innerHTML = `<div class="p-10 text-center text-slate-400 text-xs bg-white rounded-2xl border border-slate-200 shadow-sm mt-4">Type multiple components or a brand name to explore exact clinical substitutes.</div>`;
                 countEl.innerText = "Ready for search query...";
                 return;
             }
 
             try {
-                const cleanQuery = query.replace(/[^a-z0-9]/gi, '%');
-                const stmt = db.prepare(`
-                    SELECT * FROM "${tableName}" 
-                    WHERE LOWER("Brand Name") LIKE :q OR LOWER("API (Active Ingredients Only)") LIKE :q 
-                    LIMIT 80
-                `);
+                // Split query into individual words for combination search handling
+                const tokens = rawQuery.split(/\s+/).filter(t => t.length > 0);
                 
-                stmt.bind({ ':q': `%${cleanQuery}%` });
+                let conditions = [];
+                let params = {};
+
+                tokens.forEach((token, index) => {
+                    let paramName = `:t${index}`;
+                    conditions.append ? null : null; // placeholder syntax safety
+                    conditions.push(`(LOWER("Brand Name") LIKE ${paramName} OR LOWER("API (Active Ingredients Only)") LIKE ${paramName})`);
+                    params[paramName] = `%${token}%`;
+                });
+
+                const sqlQuery = `
+                    SELECT * FROM "${tableName}" 
+                    WHERE ${conditions.join(' AND ')} 
+                    LIMIT 80
+                `;
+
+                const stmt = db.prepare(sqlQuery);
+                stmt.bind(params);
+                
                 let rows = [];
                 while (stmt.step()) {
                     rows.push(stmt.getAsObject());
@@ -175,7 +186,7 @@
                 stmt.free();
 
                 if (rows.length === 0) {
-                    container.innerHTML = `<div class="p-8 text-center text-slate-400 text-xs bg-white rounded-2xl border border-slate-200 shadow-sm">No matching formulas found. Check spelling or try a broader keyword.</div>`;
+                    container.innerHTML = `<div class="p-8 text-center text-slate-400 text-xs bg-white rounded-2xl border border-slate-200 shadow-sm">No combinations matched all keywords. Try broadening your terms.</div>`;
                     countEl.innerText = "0 matches found";
                     return;
                 }
@@ -223,7 +234,6 @@
             document.getElementById('modalComposition').innerText = `API: ${api} | Strength: ${strength}`;
 
             const listEl = document.getElementById('substitutesList');
-            // Reset modal scroll position to top
             listEl.scrollTop = 0;
             listEl.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs bg-white rounded-2xl">Searching exact substitutes...</div>`;
             document.getElementById('substituteModal').classList.remove('hidden');
@@ -242,7 +252,6 @@
                 }
                 stmt.free();
 
-                // Sort substitutes: Top pharma companies first silently
                 subs.sort((a, b) => {
                     let aTop = isTopCompany(a['Manufacturer']) ? 0 : 1;
                     let bTop = isTopCompany(b['Manufacturer']) ? 0 : 1;
