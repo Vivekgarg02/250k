@@ -4,7 +4,7 @@ self.addEventListener('install', (e) => {
       return cache.addAll([
         './index.html',
         './manifest.json',
-        './250k med.db'
+        './268k med.db'
       ]);
     })
   );
